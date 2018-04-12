@@ -60,4 +60,9 @@ LOCAL_STATIC_LIBRARIES := \
 
 LOCAL_CLANG := true
 
+ifneq ($(SONY_INIT_USE_LZMA),)
+    LOCAL_STATIC_LIBRARIES += liblzma
+    LOCAL_CPPFLAGS += -DUSE_LZMA
+endif
+
 include $(BUILD_EXECUTABLE)

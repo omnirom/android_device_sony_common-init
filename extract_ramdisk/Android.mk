@@ -7,10 +7,12 @@ LOCAL_SRC_FILES := uncompress.cpp \
 
 LOCAL_FORCE_STATIC_EXECUTABLE := true
 LOCAL_STATIC_LIBRARIES := libelf libc libm libz
+LOCAL_STATIC_LIBRARIES += liblzma
 LOCAL_C_INCLUDES := \
 	external/elfutils/libelf \
 	external/zlib
 LOCAL_CPPFLAGS := -g -c -W
+
 LOCAL_MODULE := extract_ramdisk
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES

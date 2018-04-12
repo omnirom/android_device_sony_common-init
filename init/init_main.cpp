@@ -124,7 +124,8 @@ int main(int argc, char** argv)
     }
 
     // Boot to Recovery
-    if (recoveryBoot)
+    if (recoveryBoot && 
+        !file_exists("/root/sbin/recovery")) // We already are recovery ramdisk. Do not extract it again! 
     {
         // Recovery boot
         write_string(BOOT_TXT, "RECOVERY BOOT", true);

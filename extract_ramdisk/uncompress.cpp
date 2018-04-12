@@ -13,6 +13,11 @@
 
 #include "uncompress.h"
 
+// memcmp needs buffer, no way to use preprocessor var
+char gzip_header[] = { 0x1f, 0x8B };
+//char lzma_header[] = { 0xFF, 0x4C, 0x5A, 0x4D, 0x41, 0x00 };
+char lzma_header[] = { 0x5d, 0x00, 0x00, 0x80, 0x00, 0xff };
+
 size_t uncompress_gzip_memory(const byte_p compressed_data,
     const size_t compressed_data_size, const byte_p uncompressed_data,
     const size_t uncompressed_max_size) {
@@ -46,13 +51,28 @@ size_t uncompress_memory(byte_p uncompressed_buffer, byte_p buffer, unsigned lon
         printf("Unable to malloc memory for gunzip.\nFailed\n");
         return -1; 
     }   
-    size_t uncompressed_size;
-    uncompressed_size = uncompress_gzip_memory(buffer, file_size,
-        uncompressed_buffer, MEMORY_BUFFER_SIZE);
+    size_t uncompressed_size = 0;
+
+    if (!memcmp(gzip_header, buffer, sizeof(gzip_header))) {
+        printf("GZIP ramdisk found\n");
+		uncompressed_size = uncompress_gzip_memory(buffer, file_size,
+	        uncompressed_buffer, MEMORY_BUFFER_SIZE);
+#if USE_LZMA
+    } else if (!memcmp(lzma_header, buffer, sizeof(lzma_header))) {
+        printf("LZMA ramdisk found\n");
+		return -255; //Unsupported yet
+#endif
+    } else {
+		char foo[16];
+		memcpy(foo, buffer, sizeof((char*)16));
+        printf("Unrecognized ramdisk compression (%#016x). Giving up! \n", foo);
+		return -2;
+    }
+
     free(buffer);
     if (uncompressed_size <= 0) {
         free(uncompressed_buffer);
-        printf("Failed to gunzip\n");
+        printf("Failed to uncompress\n");
         return -1; 
     }   
     printf("Original size: %lu, gunzipped: %zu\n", file_size,

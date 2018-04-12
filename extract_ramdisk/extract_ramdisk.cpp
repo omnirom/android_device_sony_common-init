@@ -30,6 +30,7 @@
  *
  * Copyright (c) 2013
  * Copyright (C) 2016 The CyanogenMod Project
+ * Copyright (C) 2018 The OmniRom Project
  */
 
 #include <stdio.h>
@@ -41,18 +42,18 @@
 #include "bootimg.h"
 #include "zlib.h"
 
+#include "uncompress.h"
+
 #define ELF_RAMDISK_LOCATION 2 // Ramdisk is the second file in the image
 #define EER_DEFAULT_TMP "/tmp" // Scatch folder default location
 #define EER_TMP_RAMDISK_CPIO "ramdisk.cpio" // temporary ramdisk cpio file name
 #define EER_SEARCH_STRING "fota-ua" // String to search to determine if the
                                     // ramdisk is a stock Sony FOTA ramdisk
-#define MEMORY_BUFFER_SIZE (const size_t)40*1024*1024 // Max size of uncompressed
-                                                   // ramdisk (40 MB)
 #ifndef PATH_MAX
 #define PATH_MAX 255
 #endif
 
-typedef char* byte_p;
+#define DEBUG false
 
 char input_filename[PATH_MAX], output_filename[PATH_MAX], tmp_dir[PATH_MAX];
 int has_input = 0, has_output = 0, dont_unzip = 0, check_ramdisk = 0;
@@ -65,33 +66,6 @@ int path_exists(const char* path) {
 		return 0;
 	else
 		return -1;
-}
-
-size_t uncompress_gzip_memory(const byte_p compressed_data,
-	const size_t compressed_data_size, const byte_p uncompressed_data,
-	const size_t uncompressed_max_size) {
-	z_stream zInfo = {0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	zInfo.avail_in = compressed_data_size;
-	zInfo.total_in = compressed_data_size;
-	zInfo.avail_out = uncompressed_max_size;
-	zInfo.total_out = uncompressed_max_size;
-	zInfo.next_in = (unsigned char *)compressed_data;
-	zInfo.next_out = (unsigned char *)uncompressed_data;
-	size_t return_value = 0;
-	unsigned long err = inflateInit2(&zInfo, 16 + MAX_WBITS); // zlib function
-
-	if (err == Z_OK) {
-		err = inflate( &zInfo, Z_FINISH); // zlib function
-		if (err == Z_STREAM_END) {
-			return_value = zInfo.total_out;
-		} else {
-			printf("gunzip error -- Err:inflate %lu\n", err);
-		}
-	} else {
-		printf("gunzip error -- Err:inflateInit2 %lu\n", err);
-	}
-	inflateEnd(&zInfo);
-	return(return_value);
 }
 
 int scan_file_for_data(char *filename, unsigned char *data, int data_size,
@@ -193,24 +167,8 @@ int copy_file_part(const char* infile, const char* outfile,
 
 	if (!dont_unzip) {
 		uncompressed_buffer = (byte_p) malloc(MEMORY_BUFFER_SIZE);
-		if (uncompressed_buffer == NULL) {
-			free(buffer);
-			printf("Unable to malloc memory for gunzip.\nFailed\n");
-			return -1;
-		}
-		size_t uncompressed_size;
-		uncompressed_size = uncompress_gzip_memory(buffer, file_size,
-			uncompressed_buffer, MEMORY_BUFFER_SIZE);
-		free(buffer);
-		if (uncompressed_size <= 0) {
-			free(uncompressed_buffer);
-			printf("Failed to gunzip\n");
-			return -1;
-		}
-		printf("Original size: %lu, gunzipped: %zu\n", file_size,
-			uncompressed_size);
+		file_size = (unsigned long) uncompress_memory(uncompressed_buffer, buffer, file_size);
 		buffer = uncompressed_buffer;
-		file_size = uncompressed_size;
 	}
 
 	// Open the output file
@@ -225,8 +183,24 @@ int copy_file_part(const char* infile, const char* outfile,
 	}
 
 	// Copy the file
-	printf("Copying '%s' to '%s'\n", infile, outfile);
+	printf("Copying %lu bytes of deflated datas from '%s' to '%s'\n", file_size, infile, outfile);
 	result = fwrite(buffer, 1, file_size, oFile);
+
+#if DEBUG
+	int i=0;
+	printf("buffer: ");
+	for (i=0; i<16 ; i++) {
+		printf(" 0x%x", buffer[i]);
+	}
+	printf("). \n");
+
+	printf("uncompressed_buffer: ");
+	for (i=0; i<16 ; i++) {
+		printf(" 0x%x", uncompressed_buffer[i]);
+	}
+	printf("). \n");
+#endif
+
 	if (!dont_unzip)
 		free(uncompressed_buffer);
 	else
@@ -541,3 +515,4 @@ int extract_ramdisk(int argc, const char** argv) {
 
 	return extract_ramdisk_image();
 }
+

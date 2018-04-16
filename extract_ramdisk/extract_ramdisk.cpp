@@ -166,7 +166,7 @@ int copy_file_part(const char* infile, const char* outfile,
 	if (!dont_unzip) {
 		uncompressed_buffer = (byte_p) malloc(MEMORY_BUFFER_SIZE);
 		file_size = (unsigned long) uncompress_memory(uncompressed_buffer, buffer, file_size);
-
+		buffer = uncompressed_buffer;
 	}
 
 	// Open the output file
@@ -181,8 +181,24 @@ int copy_file_part(const char* infile, const char* outfile,
 	}
 
 	// Copy the file
-	printf("Copying '%s' to '%s'\n", infile, outfile);
-	result = fwrite(buffer, 1, file_size, oFile);
+	printf("Copying %lu bytes of deflated datas from '%s' to '%s'\n", file_size, infile, outfile);
+		result = fwrite(buffer, 1, file_size, oFile);
+	
+
+        int i=0;
+        printf("buffer: ");
+        for (i=0; i<16 ; i++) {
+            printf(" 0x%x", buffer[i]);
+        }
+        printf("). \n");
+
+        printf("uncompressed_buffer: ");
+        for (i=0; i<16 ; i++) {
+            printf(" 0x%x", uncompressed_buffer[i]);
+        }
+        printf("). \n");
+
+
 	if (!dont_unzip)
 		free(uncompressed_buffer);
 	else

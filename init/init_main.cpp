@@ -26,6 +26,8 @@
 #include "init_board.h"
 #include "init_prototypes.h"
 
+#include <android-base/logging.h>
+
 // Main: executable
 int main(int argc, char** argv)
 {
@@ -141,7 +143,8 @@ int main(int argc, char** argv)
         if (!testBoard && DEV_BLOCK_FOTA_MINOR != -1 &&
                 (!file_exists(SBIN_CPIO_RECOVERY) || \
                 keycheckStatus != KEYCHECK_RECOVERY_BOOT_ONLY))
-        {
+        { 
+LOG(INFO) << "init_sony: recovery booting";
             write_string(BOOT_TXT, "RECOVERY FOTA " DEV_BLOCK_FOTA_PATH, true);
             mknod(DEV_BLOCK_FOTA_PATH, S_IFBLK | 0600,
                     makedev(DEV_BLOCK_FOTA_MAJOR, DEV_BLOCK_FOTA_MINOR));
@@ -149,6 +152,8 @@ int main(int argc, char** argv)
             const char* argv_extract_elf[] = { "", "-i", DEV_BLOCK_FOTA_PATH,
                     "-o", SBIN_CPIO_RECOVERY, "-t", "/",
                     FOTA_RAMDISK_CHECK ? "-c" : "-z" };
+
+LOG(INFO) << "init_sony: gonna call ramdisk with: '" << argv_extract_elf << "'";
             extract_ramdisk(sizeof(argv_extract_elf) / sizeof(const char*),
                     argv_extract_elf);
         }
@@ -158,12 +163,14 @@ int main(int argc, char** argv)
         {
             const char* argv_ramdiskcpio[] = { EXEC_TOYBOX, "cpio", "-i", "-F",
                     SBIN_CPIO_RECOVERY, nullptr };
+LOG(NFO) << "init_sony: gonna cpio ramdisk image: " ;
             system_exec(argv_ramdiskcpio);
         }
     }
     // Boot to Android
     else
     {
+LOG(INFO) << "init_sony: rom booting";
         // Android boot
         write_string(BOOT_TXT, "ANDROID BOOT", true);
         init_board.introduce_android();
@@ -172,6 +179,7 @@ int main(int argc, char** argv)
     // Rename init ready for boot
     if (file_exists("/init.real") && !testBoard)
     {
+LOG(NFO) << "init_sony: renaming init.real " ;
         unlink("/init");
         rename("/init.real", "/init");
     }
@@ -201,6 +209,7 @@ int main(int argc, char** argv)
 
         // Launch ramdisk /init in the current process
         const char* argv_init[] = { "/init", nullptr };
+LOG(NFO) << "init_sony: gonna call init again" ;
         system_exec_inline(argv_init);
     }
 

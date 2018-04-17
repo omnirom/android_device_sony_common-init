@@ -28,7 +28,9 @@ LOCAL_SRC_FILES := \
     ../extract_ramdisk/extract_ramdisk.cpp
 
 LOCAL_C_INCLUDES := \
-    ../extract_ramdisk
+    ../extract_ramdisk \
+    system/core/liblog/include \
+    system/core/base/include
 
 ifneq ($(BOARD_SONY_INIT_INCLUDE),)
 LOCAL_C_INCLUDES += \
@@ -61,7 +63,7 @@ LOCAL_STATIC_LIBRARIES := \
 LOCAL_CLANG := true
 
 ifneq ($(SONY_INIT_USE_LZMA),)
-    LOCAL_STATIC_LIBRARIES += liblzma
+    LOCAL_STATIC_LIBRARIES += liblzma liblog libbase
     LOCAL_CPPFLAGS += -DUSE_LZMA
 endif
 

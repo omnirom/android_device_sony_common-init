@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcc28b4b_ccf95a50",
+        "filename": "init/init_main.cpp",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001711
+      },
+      "writtenOn": "2018-04-19T20:41:10Z",
+      "side": 1,
+      "message": "Typo ???",
+      "range": {
+        "startLine": 128,
+        "startChar": 22,
+        "endLine": 128,
+        "endChar": 27
+      },
+      "revId": "444dd7c6d699630f2d49401a83e922ce01e16f05",
+      "serverId": "56841c99-7c94-43d4-bf0b-cb4707e66d55",
+      "unresolved": false
+    }
+  ]
+}
